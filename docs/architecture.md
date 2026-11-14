@@ -1,17 +1,17 @@
 # System Architecture - AstroGuardian-AI
 
+AstroGuardian-AI is engineered with a modular, decoupled architecture to ensure real-time responsiveness, safety compliance, and seamless collaboration across AI, backend, and frontend domains.
+
+## System Workflow Diagram
+
 ```mermaid
 graph TD
-    %% Frontend Layer
-    UI[React Frontend Dashboard] -->|REST API / JSON| API[FastAPI Backend]
-
-    %% Backend Layer
-    API -->|Python Calls| AI[AI Core Engine]
-
-    %% AI Core & Data Layers
-    AI -->|Validates against| HRP[NASA HRP Guidelines]
-    AI -->|Reads Telemetry| Data[(sample_health_data.csv)]
-    AI -->|Runs Unit Tests| Tests[Pytest Suite]
+    UI[React Frontend Dashboard] --> API[FastAPI Backend]
+    API --> AI[AI Core Engine]
+    
+    AI --> HRP[NASA HRP Guidelines]
+    AI --> Data[Telemetry CSV Data]
+    AI --> Tests[Pytest Suite]
 
     subgraph System Architecture
         UI
