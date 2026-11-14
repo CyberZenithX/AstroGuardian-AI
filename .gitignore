@@ -218,3 +218,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# AstroGuardian-AI
+node_modules/
+backend/astroguardian.db
+*.db
