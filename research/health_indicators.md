@@ -25,4 +25,3 @@ AstroGuardian-AI monitors key physiological parameters tailored to microgravity 
   * *Monitoring:* Tracks febrile responses or environmental thermal regulation anomalies ($> 37.8^\circ\text{C}$ or $< 35.5^\circ\text{C}$).
 "@
 
-Set-Content -Path "research/health_indicators.md" -Value $indicatorsContent -Encoding utf8
