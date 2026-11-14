@@ -107,7 +107,7 @@ Then set `LLM_PROVIDER=local` in `.env`.
 
 ## 🔐 Access, Roles & Screens
 
-The demo is behind a shared password, **`NASA`**, to keep bots out. After entering it, pick a role. Permissions are enforced by the API, not just hidden in the UI.
+There is no password: the first screen asks you to pick a role. Permissions are enforced by the API, not just hidden in the UI.
 
 | | Astronaut | Crew Medical Officer | Ground Flight Surgeon |
 |---|:-:|:-:|:-:|
@@ -126,7 +126,7 @@ The demo is behind a shared password, **`NASA`**, to keep bots out. After enteri
 - **CMO, Crew triage:** a queue of alerts waiting for acknowledgement, then the crew table sorted by urgency with 14-day trends. Selecting a crew member opens a side panel to acknowledge, log a reading or ask the AI.
 - **Ground, Comms window:** updates since the last review, each with an advice box, plus the space-weather panel and crew trend charts.
 
-> The password is a bot filter for a public demo, **not real authentication**: anyone who knows it can choose any role. A flight system would use individual crew credentials.
+> The role picker is a demo switcher, **not authentication**: anyone can choose any role. A flight system would use individual crew credentials.
 
 ---
 
@@ -171,7 +171,7 @@ The API runs at http://localhost:8000 (interactive docs at `/docs`). With no `DA
 ```bash
 cd frontend && npm install && npm run dev
 ```
-Open http://localhost:5173 and enter the password `NASA`.
+Open http://localhost:5173 and pick a role.
 
 **Single-process mode (as it would run aboard):** run `npm run build` in `frontend/`, then start only the backend. It serves the dashboard (with offline support) at http://localhost:8000.
 
@@ -211,7 +211,6 @@ Vercel serves the built React app from its CDN and runs FastAPI as a Python func
    - `SECRET_KEY`: a random string, from `python -c "import secrets; print(secrets.token_hex(32))"`
    - `GROQ_API_KEY`: your Groq key
    - `NASA_API_KEY`: your NASA key, for the DONKI event log
-   - optional: `DEMO_PASSWORD`
 4. Deploy.
 
 Notes:

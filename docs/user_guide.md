@@ -1,7 +1,7 @@
 # User Guide
 
 ## Getting in
-Enter the access password **NASA**, then choose a role. Each role lands on its own home screen. Use the ⇄ icon in the header to switch role, and the exit icon to lock the app.
+Choose a role on the first screen; there is no password. Each role lands on its own home screen. Use the ⇄ icon in the header to go back to the role picker.
 
 | Status | Meaning | What to do |
 |---|---|---|
