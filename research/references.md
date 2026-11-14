@@ -1,3 +1,4 @@
+$referencesContent = @"
 # References & Data Sources
 
 ## Scientific & Medical Frameworks
@@ -10,3 +11,6 @@
 * **Backend Integration:** FastAPI asynchronous web framework.
 * **Frontend Dashboard:** React, Tailwind CSS, Lucide icons.
 * **Data Simulation:** Custom generative scripts simulating zero-g physiological drift based on published space medicine baselines.
+"@
+
+Set-Content -Path "research/references.md" -Value $referencesContent -Encoding utf8

@@ -1,3 +1,4 @@
+$indicatorsContent = @"
 # Tracked Spacecraft Health Indicators & Thresholds
 
 AstroGuardian-AI monitors key physiological parameters tailored to microgravity adaptation and operational stress during space missions.
@@ -11,9 +12,9 @@ AstroGuardian-AI monitors key physiological parameters tailored to microgravity 
   * *Systolic / Diastolic monitoring* to catch orthostatic intolerance risks caused by fluid shifts.
 
 ## 2. Respiratory & Oxygenation
-* **Blood Oxygen Saturation ($):**
-  * *Normal Range:* \% - 100\%$ in pressurized cabin environments.
-  * *Warning Tier (YELLOW):* \% - 94\%$ (indicates potential cabin air quality fluctuation or mild hypoxia).
+* **Blood Oxygen Saturation ($SpO_2$):**
+  * *Normal Range:* $95\% - 100\%$ in pressurized cabin environments.
+  * *Warning Tier (YELLOW):* $92\% - 94\%$ (indicates potential cabin air quality fluctuation or mild hypoxia).
   * *Critical Tier (RED):* $< 92\%$ (triggers immediate emergency alert protocol).
 
 ## 3. Circadian & Recovery Metrics
@@ -22,3 +23,6 @@ AstroGuardian-AI monitors key physiological parameters tailored to microgravity 
   * *Risk Flag:* $< 5$ hours triggers fatigue-induced cognitive impairment warnings per NASA HRP circadian guidelines.
 * **Core Body Temperature:**
   * *Monitoring:* Tracks febrile responses or environmental thermal regulation anomalies ($> 37.8^\circ\text{C}$ or $< 35.5^\circ\text{C}$).
+"@
+
+Set-Content -Path "research/health_indicators.md" -Value $indicatorsContent -Encoding utf8
