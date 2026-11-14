@@ -95,11 +95,16 @@ def get_recommendations(risk_level: str, findings: list) -> dict:
         actions.append("Check that wearable sensors are attached and powered, then take a new reading.")
     for f in findings:
         if f["kind"] == "missing":
+            f["actions"] = ["Check that wearable sensors are attached and powered, then take a new reading."]
             continue
         steps = _actions_for(f["metric"], f["severity"])
         # RED: every step matters. Otherwise only the most important step per
         # finding, so a YELLOW with many findings stays a short, usable list.
-        for a in (steps if f["severity"] == "RED" else steps[:1]):
+        chosen = steps if f["severity"] == "RED" else steps[:1]
+        # Each finding carries its own steps, so the UI can show the problem
+        # and what to do about it together.
+        f["actions"] = list(chosen)
+        for a in chosen:
             text = _KIND_PREFIX.get(f["kind"], "") + a
             if text not in actions:
                 actions.append(text)

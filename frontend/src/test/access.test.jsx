@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
@@ -49,8 +49,9 @@ describe("access", () => {
 
   it("lists what each role can and cannot do", () => {
     render(<RolePicker state={STATE} onChosen={() => {}} onLock={() => {}} />);
-    expect(screen.getByText(/✕ Other astronauts' data/)).toBeInTheDocument();
-    expect(screen.getByText(/✓ Acknowledge alerts/)).toBeInTheDocument();
-    expect(screen.getByText(/✕ Log readings/)).toBeInTheDocument();
+    const item = (text) => screen.getByText(text).closest("li");
+    expect(within(item("Other astronauts' data")).getByRole("img", { name: "Cannot" })).toBeInTheDocument();
+    expect(within(item("Run ground sync")).getByRole("img", { name: "Can" })).toBeInTheDocument();
+    expect(within(item("Log readings")).getByRole("img", { name: "Cannot" })).toBeInTheDocument();
   });
 });

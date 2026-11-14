@@ -1,12 +1,17 @@
-import { Bell, CloudOff, LogOut, Repeat, Satellite, ShieldCheck, UserRound, Users, WifiOff } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { Bell, CloudOff, LogOut, Repeat, Satellite, ShieldCheck, Stethoscope, WifiOff } from "lucide-react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { api, clearApiCache, on } from "./api.js";
 import { Gate, RolePicker } from "./components/Access.jsx";
-import AlertsLog from "./components/AlertsLog.jsx";
-import AstronautDetail from "./components/AstronautDetail.jsx";
-import CrewOverview from "./components/CrewOverview.jsx";
+import { IconButton } from "./components/ui.jsx";
 
-// Minimal hash router: #/  #/astronaut/ID  #/alerts
+// Screens (and the chart library they pull in) load only after login, so the
+// password and role screens stay small.
+const AlertsLog = lazy(() => import("./components/AlertsLog.jsx"));
+const AstronautView = lazy(() => import("./components/AstronautView.jsx"));
+const GroundInbox = lazy(() => import("./screens/GroundInbox.jsx"));
+const Triage = lazy(() => import("./screens/Triage.jsx"));
+
+// Minimal hash router: #/   #/crew/ID   #/alerts
 function useRoute() {
   const parse = () => window.location.hash.replace(/^#\/?/, "").split("/");
   const [route, setRoute] = useState(parse);
@@ -36,15 +41,8 @@ export default function App() {
     return on("unauthorized", loadAuth);
   }, [loadAuth]);
 
-  async function switchRole() {
-    await api.switchRole().catch(() => {});
-    await clearApiCache();
-    window.location.hash = "/";
-    loadAuth();
-  }
-
-  async function lock() {
-    await api.logout().catch(() => {});
+  async function leave(fn) {
+    await fn().catch(() => {});
     await clearApiCache();
     window.location.hash = "/";
     loadAuth();
@@ -58,17 +56,23 @@ export default function App() {
     );
   }
   if (!auth.unlocked) return <Gate onUnlocked={loadAuth} />;
-  if (!auth.user) return <RolePicker state={auth} onChosen={loadAuth} onLock={lock} />;
-  return <Dashboard user={auth.user} onSwitchRole={switchRole} onLock={lock} />;
+  if (!auth.user) return <RolePicker state={auth} onChosen={loadAuth} onLock={() => leave(api.logout)} />;
+  return <Shell user={auth.user} onSwitchRole={() => leave(api.switchRole)} onLock={() => leave(api.logout)} />;
 }
 
-function Dashboard({ user, onSwitchRole, onLock }) {
+const NAV = {
+  astronaut: [],
+  cmo: [["", "Triage", Stethoscope], ["alerts", "Alert history", Bell]],
+  ground: [["", "Comms window", Satellite], ["alerts", "Alert history", Bell]],
+};
+
+function Shell({ user, onSwitchRole, onLock }) {
   const [route, go] = useRoute();
   const [crew, setCrew] = useState([]);
   const [config, setConfig] = useState(null);
   const [offline, setOffline] = useState(false);
   const [cachedAt, setCachedAt] = useState(null);
-  const isAstronaut = user.role === "astronaut";
+  const [tick, setTick] = useState(0);
 
   useEffect(() => on("cache", setCachedAt), []);
 
@@ -78,6 +82,7 @@ function Dashboard({ user, onSwitchRole, onLock }) {
       setCrew(c);
       setConfig(cfg);
       setOffline(false);
+      setTick((t) => t + 1);
     } catch (e) {
       if (e.status === 0) setOffline(true);
     }
@@ -91,87 +96,82 @@ function Dashboard({ user, onSwitchRole, onLock }) {
 
   const [page, param] = route;
   const llm = config?.llm;
-  // Astronauts land on their own page; everyone else on the crew overview.
-  const detailId = page === "astronaut" && param ? param : isAstronaut ? user.astronaut_id : null;
+  // Old links (#/astronaut/ID) still work.
+  const openId = (page === "crew" || page === "astronaut") ? param : null;
+  const home = page !== "alerts";
+
+  let content;
+  if (user.role === "astronaut") {
+    content = <AstronautView key={user.astronaut_id} id={user.astronaut_id} user={user} llm={llm} pulse={tick} onChanged={refresh} />;
+  } else if (page === "alerts") {
+    content = <AlertsLog user={user} onOpen={(id) => go(`crew/${id}`)} onChanged={refresh} />;
+  } else {
+    const Screen = user.role === "cmo" ? Triage : GroundInbox;
+    content = <Screen crew={crew} user={user} llm={llm} openId={openId} onChanged={refresh}
+                      onOpen={(id) => go(`crew/${id}`)} onClose={() => go("")} />;
+  }
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 border-b border-line bg-surface-0/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-          <button onClick={() => go("")} className="flex items-center gap-2 text-lg font-semibold">
+      <header className="sticky top-0 z-10 border-b border-line bg-surface-0/95 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-1 px-4 py-1.5">
+          <button onClick={() => go("")} className="flex h-11 items-center gap-2 text-lg font-semibold">
             <ShieldCheck className="h-6 w-6 text-series" aria-hidden /> AstroGuardian
           </button>
-          <nav className="flex flex-wrap items-center gap-1 text-sm">
-            <NavBtn active={page !== "alerts"} onClick={() => go("")} icon={isAstronaut ? UserRound : Users}>
-              {isAstronaut ? "My health" : "Crew"}
-            </NavBtn>
-            <NavBtn active={page === "alerts"} onClick={() => go("alerts")} icon={Bell}>
-              {isAstronaut ? "My alerts" : "Alerts"}
-              {config?.unsynced_alerts ? (
-                <span className="ml-1 rounded-full bg-surface-3 px-1.5 text-xs text-ink-2" title="Awaiting ground sync">
-                  {config.unsynced_alerts}
-                </span>
-              ) : null}
-            </NavBtn>
-            <span className="mx-1 hidden h-5 w-px bg-line sm:block" />
-            <span className="rounded-full bg-surface-2 px-3 py-1 text-xs text-ink-2" data-testid="role-chip">
+          <nav aria-label="Main" className="flex items-center gap-1 text-sm">
+            {NAV[user.role].map(([path, label, Icon]) => {
+              const active = path === "" ? home : page === path;
+              return (
+                <button key={label} onClick={() => go(path)} aria-current={active ? "page" : undefined}
+                        className={`flex h-11 items-center gap-1.5 rounded-lg px-3 ${active ? "bg-surface-2 text-ink-1" : "text-ink-2 hover:text-ink-1"}`}>
+                  <Icon className="h-4 w-4" aria-hidden /> {label}
+                  {path === "" && user.role === "ground" && config?.unsynced_alerts ? (
+                    <span className="rounded-full bg-action px-1.5 text-xs text-white" aria-label={`${config.unsynced_alerts} new`}>
+                      {config.unsynced_alerts}
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </nav>
+          <div className="ml-auto flex items-center gap-1">
+            <span className="hidden rounded-full bg-surface-2 px-3 py-1 text-xs text-ink-2 sm:inline" data-testid="role-chip">
               {user.role_label}{user.astronaut_id ? ` · ${user.astronaut_id}` : ""}
             </span>
-            <button onClick={onSwitchRole} title="Switch role" aria-label="Switch role"
-                    className="rounded-lg p-1.5 text-ink-3 hover:bg-surface-2 hover:text-ink-1">
-              <Repeat className="h-4 w-4" />
-            </button>
-            <button onClick={onLock} title="Lock" aria-label="Lock"
-                    className="rounded-lg p-1.5 text-ink-3 hover:bg-surface-2 hover:text-ink-1">
-              <LogOut className="h-4 w-4" />
-            </button>
-          </nav>
+            <IconButton icon={Repeat} label="Switch role" onClick={onSwitchRole} />
+            <IconButton icon={LogOut} label="Lock" onClick={onLock} />
+          </div>
         </div>
         {llm?.demo_mode && (
-          <div className="border-t border-line bg-surface-1 px-4 py-1.5 text-center text-xs text-ink-3">
-            <Satellite className="mr-1 inline h-3.5 w-3.5" aria-hidden />
-            Demo mode: the AI assistant calls {llm.model} via the Groq API. In flight, the same open-weight model runs
+          <p className="border-t border-line bg-surface-1 px-4 py-1.5 text-center text-xs text-ink-3">
+            Demo: the AI assistant calls {llm.model} through the Groq API. In flight the same open-weight model runs
             onboard with no internet. Health alerts are always computed locally.
-            {!llm.enabled && " (GROQ_API_KEY not set: showing template explanations.)"}
-          </div>
+            {!llm.enabled && " (No GROQ_API_KEY set, so answers are templates.)"}
+          </p>
         )}
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-6">
+      <main className={`mx-auto px-4 py-6 ${user.role === "astronaut" ? "max-w-4xl" : "max-w-6xl"}`}>
         {cachedAt && (
           <div className="mb-4 flex items-center gap-2 rounded-lg bg-status-warning/15 px-4 py-3 text-sm ring-1 ring-status-warning/50">
-            <CloudOff className="h-4 w-4 shrink-0" />
-            Offline: showing data saved at {new Date(cachedAt).toLocaleString()}. New readings can't be submitted until the
-            server is reachable.
+            <CloudOff className="h-4 w-4 shrink-0 text-status-warning" aria-hidden />
+            Offline. Showing data saved {new Date(cachedAt).toLocaleString()}. New readings can't be saved until the
+            connection is back.
           </div>
         )}
         {offline && !cachedAt && (
           <div className="mb-4 flex items-center gap-2 rounded-lg bg-status-critical/15 px-4 py-3 text-sm ring-1 ring-status-critical/50">
-            <WifiOff className="h-4 w-4" /> Cannot reach the onboard AstroGuardian server. Status shown may be out of date.
+            <WifiOff className="h-4 w-4 text-status-critical" aria-hidden /> Can't reach the onboard AstroGuardian server. What you see may be out of date.
           </div>
         )}
-        {page === "alerts" ? (
-          <AlertsLog user={user} onOpen={(id) => go(`astronaut/${id}`)} onChanged={refresh} />
-        ) : detailId ? (
-          <AstronautDetail key={detailId} id={detailId} user={user} llm={llm}
-                           onBack={isAstronaut ? null : () => go("")} onChanged={refresh} />
-        ) : (
-          <CrewOverview crew={crew} onOpen={(id) => go(`astronaut/${id}`)} />
-        )}
+        <Suspense fallback={<div className="h-40 animate-pulse rounded-xl bg-surface-1" aria-busy="true" aria-label="Loading" />}>
+          {content}
+        </Suspense>
       </main>
 
-      <footer className="mx-auto max-w-6xl px-4 pb-8 text-xs text-ink-3">
-        Decision support only, not a medical diagnosis. Always follow the Crew Medical Officer and flight surgeon guidance.
+      <footer className={`mx-auto px-4 pb-8 text-xs text-ink-3 ${user.role === "astronaut" ? "max-w-4xl" : "max-w-6xl"}`}>
+        Decision support only, not a medical diagnosis. Always follow the Crew Medical Officer and flight surgeon.
       </footer>
     </div>
-  );
-}
-
-function NavBtn({ active, onClick, icon: Icon, children }) {
-  return (
-    <button onClick={onClick} aria-current={active ? "page" : undefined}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 ${active ? "bg-surface-2 text-ink-1" : "text-ink-2 hover:text-ink-1"}`}>
-      <Icon className="h-4 w-4" aria-hidden /> {children}
-    </button>
   );
 }

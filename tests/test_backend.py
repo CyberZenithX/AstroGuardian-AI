@@ -162,3 +162,24 @@ def test_llm_network_error_falls_back(cmo, monkeypatch):
     assert body["source"] == "fallback" and body["error"] == "ConnectError"
     chat = cmo.post("/api/astronauts/ASTRO_02/chat", json={"question": "Why yellow?"}).json()
     assert chat["source"] == "fallback"
+
+
+# ------------------------------------------------ role-screen data shapes ---
+
+def test_each_finding_carries_its_own_actions(cmo):
+    ev = cmo.get("/api/astronauts/ASTRO_02").json()["evaluation"]
+    assert ev["findings"] and all(f["actions"] for f in ev["findings"])
+
+
+def test_checked_in_today_flag(astro2):
+    assert astro2.get("/api/astronauts/ASTRO_02").json()["checked_in_today"] is False
+    astro2.post("/api/astronauts/ASTRO_02/readings", json={"sleep_hours": 7, "mood": 4, "fatigue": 3})
+    assert astro2.get("/api/astronauts/ASTRO_02").json()["checked_in_today"] is True
+
+
+def test_crew_includes_daily_series_and_open_alert(cmo):
+    crew = {a["id"]: a for a in cmo.get("/api/crew").json()}
+    hr = crew["ASTRO_02"]["series"]["heart_rate"]
+    assert 7 <= len(hr) <= 14 and hr[0]["day"] < hr[-1]["day"]
+    assert crew["ASTRO_03"]["open_alert"]["risk_level"] == "RED"
+    assert crew["ASTRO_01"]["open_alert"] is None

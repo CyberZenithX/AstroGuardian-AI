@@ -31,7 +31,25 @@ def test_scenario_acute_hypoxia_is_red_with_cmo_action(cmo):
     assert any("CMO" in a for a in ev["actions"])
 
 
+def _age_all_readings(hours):
+    from datetime import datetime, timedelta
+
+    from backend import db
+    with db.connect() as c:
+        for r in c.all("SELECT id, timestamp FROM readings"):
+            old = (datetime.fromisoformat(r["timestamp"]) - timedelta(hours=hours)).isoformat(timespec="seconds")
+            c.execute("UPDATE readings SET timestamp = ? WHERE id = ?", (old, r["id"]))
+
+
+def test_scenario_self_report_checkin_keeps_recent_sensor_values(cmo):
+    # A check-in with only self-reported fields must not look like a sensor dropout.
+    ev = _post(cmo, "ASTRO_01", sleep_hours=7.4, mood=4, fatigue=2, stress_level="Low")
+    assert ev["risk_level"] == "GREEN"
+    assert ev["current"]["heart_rate"] is not None
+
+
 def test_scenario_sensor_dropout_is_unknown(cmo):
+    _age_all_readings(13)            # no sensor data in the last 12 h
     ev = _post(cmo, "ASTRO_01", sleep_hours=7, stress_level="Low")
     assert ev["risk_level"] == "UNKNOWN"
 

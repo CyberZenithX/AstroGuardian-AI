@@ -1,40 +1,38 @@
 # User Guide
 
 ## Getting in
-Enter the access password **NASA**, then choose a role:
-- **Astronaut**: pick who you are. You see only your own data, can log a daily check-in, and can ask the AI assistant about your status.
-- **Crew Medical Officer**: sees the whole crew, logs readings for anyone, and acknowledges alerts.
-- **Ground Flight Surgeon**: sees the whole crew (read-only vitals), adds advice to alerts (the crew sees it on their page), and runs ground sync.
-
-Use the ⇄ icon in the header to switch role, and the exit icon to lock the app.
-
-## Crew overview
-The home screen shows one card per astronaut, most urgent first. Each status is shown as a colour, an icon and a word:
+Enter the access password **NASA**, then choose a role. Each role lands on its own home screen. Use the ⇄ icon in the header to switch role, and the exit icon to lock the app.
 
 | Status | Meaning | What to do |
 |---|---|---|
-| 🟢 GREEN · Nominal | Within personal baseline and safety limits | Continue operations |
-| 🟡 YELLOW · Caution | Drift from personal normal, or a predicted problem | Follow the listed actions and re-check |
+| 🟢 GREEN · Nominal | Within your personal normal and safety limits | Continue operations |
+| 🟡 YELLOW · Caution | Drift from your normal, a multi-day pattern, or a predicted problem | Follow the actions on each item and re-check |
 | 🔴 RED · Critical | A safety limit was crossed | Stop non-essential tasks, notify the CMO now |
 | ⚪ UNKNOWN | Required data missing or too old | Check sensors, take a new reading |
 
-## Astronaut page
-- **Why — findings:** each reason for the status, tagged by type:
-  - *Safety limit*: crossed a fixed threshold.
-  - *Personal baseline*: unusual for this astronaut specifically.
-  - *Multi-day pattern*: sleep debt, low mood for 3 days, skipped exercise, or cumulative radiation.
-  - *Prediction*: currently fine, but trending toward a limit within 3 days.
-  - *Data*: something is missing.
+## Astronaut: Today
+- **Status, at the top.** A one-line reason and one main button: **Start today's check-in** (or **Update check-in** once done). **Explain my status** opens the AI assistant.
+- **Advice from the ground flight surgeon**, pinned under the status when there is any.
+- **Needs attention.** Each problem shows what was found and, directly under it, what to do.
+  - **Why?** expands the chart for that measure, your normal, and where the rule comes from.
+  - **Ask AI about this** opens the assistant already asking about that problem.
+- **Your readings.** Today's value next to your normal, with a 14-day trend. Tiles are split into *wearable sensors* and *your check-ins*. Tap a tile for its full chart.
+- **Career radiation dose**, against NASA's 600 mSv limit.
+- **Tabs:** *Trends* has full charts and a table; *History* has your past alerts.
 
-  Each finding also shows the source of its threshold.
-- **What to do:** ordered actions derived from NASA HRP risk areas.
-- **AI health assistant:** *Explain my status* gives a short plain-language summary, and you can ask follow-up questions. The assistant explains the alert; it can't change it.
-- **Vitals:** 21-day charts. The shaded band is your personal normal range, and the dashed line is the safety limit. Switch to *Table* to see exact numbers.
-- **Career radiation dose:** progress toward NASA's 600 mSv career limit.
-- **Daily check-in / Log reading:** vitals plus fatigue (Samn-Perelli 1–7), mood, stress, exercise minutes and dosimeter dose. The status updates immediately.
+**Daily check-in.** Only what you can report yourself: hours slept, exercise minutes, fatigue (Samn-Perelli 1–7, each with its description), mood and stress. Sensor values arrive from the wearable. For demos, **Enter sensor values manually (demo)** reveals those fields.
 
-## Alert log
-There is one alert per ongoing problem. Repeat readings update it ("seen 3×"), and a new or worse problem opens a fresh alert. When readings return to GREEN, the alert is resolved. The CMO **acknowledges** alerts. The ground flight surgeon adds **advice** and marks updates as **received on ground** (in flight, this happens at each comms window).
+## Crew Medical Officer: Crew triage
+- **Waiting for your acknowledgement:** new or worsened alerts, with **Review** and **Acknowledge**.
+- **Crew table:** most urgent first, with the main issue, heart rate, SpO₂ and sleep, plus 14-day trends against each person's normal band.
+- Select a crew member to open their view in a **side panel**, where you can acknowledge, **Log reading** (full vitals) and ask the AI. The table stays behind it.
+- **Alert history** in the header lists every alert.
+
+## Ground flight surgeon: Comms window
+- **New since last review:** everything that arrived from the spacecraft, with findings and an **Advice to the crew** box on each open alert. The crew sees your advice on their Today screen.
+- **Mark window reviewed** when you're done; the count in the header clears.
+- **Crew trends:** heart rate, SpO₂, sleep and fatigue for all crew on shared charts, for comparison.
+- Select a name to open that crew member's view (read-only vitals).
 
 ## Offline
-If the server can't be reached, the app keeps showing the last data it saw, with a banner giving the time. New readings can't be submitted offline: you'll see an error rather than losing them silently.
+If the server can't be reached, the app keeps showing the last data it saw, with a banner giving the time. Check-ins can't be saved offline: you'll see an error rather than losing them silently.

@@ -23,7 +23,7 @@ const fmtDay = (iso) => new Date(iso).toLocaleDateString(undefined, { month: "sh
  *   - shaded band: personal baseline (mean ± 2 std) — "normal for this person"
  *   - dashed line: fixed safety limit
  */
-export default function VitalChart({ title, unit, readings, metric, baseline, limit, limitLabel, domain }) {
+export default function VitalChart({ title, unit, readings, metric, baseline, limit, limitLabel, domain, compact, id }) {
   const data = readings.map((r) => ({ t: r.timestamp, v: r[metric] }));
   const band =
     baseline?.reliable && baseline.std != null
@@ -33,14 +33,14 @@ export default function VitalChart({ title, unit, readings, metric, baseline, li
   const latest = data.at(-1)?.v;
 
   return (
-    <figure className="rounded-xl bg-surface-1 p-4 ring-1 ring-line">
-      <figcaption className="mb-2 flex items-baseline justify-between gap-2">
+    <figure id={id} className={compact ? "" : "scroll-mt-24 rounded-xl bg-surface-1 p-4 ring-1 ring-line"}>
+      <figcaption className={compact ? "sr-only" : "mb-2 flex items-baseline justify-between gap-2"}>
         <span className="font-medium">{title}</span>
         <span className="font-mono text-lg">
           {latest ?? "—"} <span className="text-sm text-ink-3">{unit}</span>
         </span>
       </figcaption>
-      <div className="h-44">
+      <div className={compact ? "h-36" : "h-44"}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={withBand} margin={{ top: 8, right: 8, bottom: 0, left: -12 }}>
             <CartesianGrid stroke={GRID} vertical={false} />

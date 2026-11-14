@@ -1,4 +1,4 @@
-import { HeartPulse, KeyRound, Loader2, Lock, Satellite, ShieldCheck, Stethoscope, UserRound } from "lucide-react";
+import { Check, HeartPulse, KeyRound, Loader2, Lock, Satellite, ShieldCheck, Stethoscope, UserRound, X } from "lucide-react";
 import { useState } from "react";
 import { api } from "../api.js";
 
@@ -58,9 +58,9 @@ export function Gate({ onUnlocked }) {
         <input id="pw" type="password" autoFocus autoComplete="off" value={password}
                onChange={(e) => setPassword(e.target.value)}
                className="mt-1 w-full rounded-lg bg-surface-2 px-3 py-2 text-ink-1 ring-1 ring-line focus:outline-none focus:ring-series" />
-        {error && <p role="alert" className="mt-2 text-sm text-status-critical">{error}</p>}
+        {error && <p role="alert" className="mt-2 text-sm text-status-text-critical">{error}</p>}
         <button type="submit" disabled={busy || !password}
-                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-series px-4 py-2 font-medium text-white hover:brightness-110 disabled:opacity-60">
+                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-action px-4 py-2 font-medium text-white hover:bg-action-hover disabled:opacity-60">
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />} Unlock
         </button>
       </form>
@@ -94,7 +94,7 @@ export function RolePicker({ state, onChosen, onLock }) {
     <Shell>
       <h1 className="text-center text-xl font-semibold">Choose your role</h1>
       <p className="mt-1 text-center text-sm text-ink-3">Each role sees and can do different things.</p>
-      {error && <p role="alert" className="mt-3 text-center text-sm text-status-critical">{error}</p>}
+      {error && <p role="alert" className="mt-3 text-center text-sm text-status-text-critical">{error}</p>}
       <div className="mt-6 grid gap-4 md:grid-cols-3">
         {state.roles.map((r) => {
           const Icon = ROLE_ICON[r.id] ?? HeartPulse;
@@ -104,8 +104,16 @@ export function RolePicker({ state, onChosen, onLock }) {
               <h2 className="mt-3 font-semibold">{r.label}</h2>
               <p className="mt-1 text-sm text-ink-3">{r.description}</p>
               <ul className="mt-3 space-y-1 text-sm">
-                {ROLE_CAN[r.id]?.map((t) => <li key={t} className="text-ink-2">✓ {t}</li>)}
-                {ROLE_CANNOT[r.id]?.map((t) => <li key={t} className="text-ink-3">✕ {t}</li>)}
+                {ROLE_CAN[r.id]?.map((t) => (
+                  <li key={t} className="flex gap-2 text-ink-2">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-status-good" aria-label="Can" role="img" /> {t}
+                  </li>
+                ))}
+                {ROLE_CANNOT[r.id]?.map((t) => (
+                  <li key={t} className="flex gap-2 text-ink-3">
+                    <X className="mt-0.5 h-4 w-4 shrink-0" aria-label="Cannot" role="img" /> {t}
+                  </li>
+                ))}
               </ul>
               {r.id === "astronaut" && (
                 <>
@@ -121,7 +129,7 @@ export function RolePicker({ state, onChosen, onLock }) {
               )}
               <div className="flex-1" />
               <button onClick={() => choose(r.id)} disabled={busy !== null}
-                      className="mt-4 inline-flex items-center justify-center gap-2 rounded-lg bg-series px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-60">
+                      className="mt-4 inline-flex items-center justify-center gap-2 rounded-lg bg-action px-4 py-2 text-sm font-medium text-white hover:bg-action-hover disabled:opacity-60">
                 {busy === r.id && <Loader2 className="h-4 w-4 animate-spin" />} Continue as {r.label}
               </button>
             </div>
@@ -129,7 +137,7 @@ export function RolePicker({ state, onChosen, onLock }) {
         })}
       </div>
       <p className="mt-6 text-center">
-        <button onClick={onLock} className="text-sm text-ink-3 hover:text-ink-1">Lock</button>
+        <button onClick={onLock} className="h-11 px-3 text-sm text-ink-3 hover:text-ink-1">Lock</button>
       </p>
     </Shell>
   );

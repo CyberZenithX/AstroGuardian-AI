@@ -18,7 +18,7 @@ def _utc(value):
 
 def evaluate(readings: pd.DataFrame, current: dict | None = None,
              stale_after_hours: float | None = None, now: pd.Timestamp | None = None,
-             context: dict | None = None) -> dict:
+             context: dict | None = None, carry_forward_hours: float | None = None) -> dict:
     """Evaluate one astronaut.
 
     readings - that astronaut's readings, any order, with a `timestamp` column.
@@ -28,6 +28,11 @@ def evaluate(readings: pd.DataFrame, current: dict | None = None,
                a GREEN status is downgraded to UNKNOWN (fail safe: old data
                cannot prove the astronaut is fine right now).
     context  - astronaut facts, e.g. {"prior_career_dose_msv": 120.0}
+    carry_forward_hours - if set, a metric missing from the latest reading
+               takes its most recent value from the last N hours. Sensors and
+               self-reports arrive as separate rows; without this a check-in
+               with only sleep/mood would look like a sensor dropout. Values
+               older than N hours are NOT carried, so real dropouts still show.
     """
     df = readings.copy()
     if "timestamp" not in df.columns:
@@ -40,6 +45,8 @@ def evaluate(readings: pd.DataFrame, current: dict | None = None,
             return _no_data(context)
         current = df.iloc[-1].to_dict()
         history = df.iloc[:-1]
+        if carry_forward_hours:
+            current = _carry_forward(current, history, carry_forward_hours)
     else:
         history = df
         current = dict(current)
@@ -76,6 +83,20 @@ def evaluate(readings: pd.DataFrame, current: dict | None = None,
         "radiation": {"career_dose_msv": career_dose(series, context),
                       "limit_msv": T.RADIATION_CAREER_LIMIT_MSV},
     }
+
+
+def _carry_forward(current: dict, history: pd.DataFrame, hours: float) -> dict:
+    ts = current.get("timestamp")
+    if history.empty or pd.isna(ts):
+        return current
+    recent = history[history["timestamp"] >= ts - pd.Timedelta(hours=hours)]
+    out = dict(current)
+    for m in list(T.NUMERIC_METRICS) + ["stress_level"]:
+        if m in recent.columns and _clean(out.get(m)) is None:
+            vals = recent[m].dropna()
+            if not vals.empty:
+                out[m] = vals.iloc[-1]
+    return out
 
 
 def _clean(v):

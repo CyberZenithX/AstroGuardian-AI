@@ -22,6 +22,7 @@ ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT / ".env")
 
 from ai import llm_explainer  # noqa: E402  (needs env loaded first)
+from ai.risk_detection import daily  # noqa: E402
 
 from . import auth, db  # noqa: E402
 from .auth import User, current_user, require, require_view  # noqa: E402
@@ -170,6 +171,28 @@ def get_config(user: User = Depends(current_user)):
             "database": "postgres" if db.is_postgres() else "sqlite"}
 
 
+SERIES_METRICS = ("heart_rate", "spo2", "blood_pressure_sys", "temperature", "sleep_hours", "fatigue", "mood",
+                  "exercise_minutes")
+
+
+def _daily_series(aid: str, days: int = 14) -> dict:
+    """Daily averages for the crew overview sparklines and trend small multiples."""
+    df = db.readings_df(aid)
+    out = {}
+    for m in SERIES_METRICS:
+        d = daily(df, m).tail(days)
+        out[m] = [{"day": k.date().isoformat(), "value": round(float(v), 2)} for k, v in d.items()]
+    return out
+
+
+def _checked_in_today(aid: str) -> bool:
+    df = db.readings_df(aid, limit=20)
+    if df.empty:
+        return False
+    today = datetime.now(timezone.utc).date().isoformat()
+    return bool(((df["source"] == "checkin") & df["timestamp"].astype(str).str.startswith(today)).any())
+
+
 @app.get("/api/crew")
 def crew(user: User = Depends(current_user)):
     out = []
@@ -177,17 +200,22 @@ def crew(user: User = Depends(current_user)):
         if not user.can_view(a["id"]):
             continue
         ev = evaluate_astronaut(a["id"])
+        alert = db.open_alert(a["id"])
         out.append({**a, "risk_level": ev["risk_level"], "summary": ev["summary"],
                     "top_finding": ev["findings"][0]["message"] if ev["findings"] else None,
+                    "findings": [{k: f[k] for k in ("metric", "label", "severity", "kind", "message")} for f in ev["findings"]],
                     "finding_count": len(ev["findings"]),
-                    "reading_timestamp": ev["reading_timestamp"], "current": ev["current"]})
+                    "reading_timestamp": ev["reading_timestamp"], "current": ev["current"],
+                    "baseline": ev["baseline"], "series": _daily_series(a["id"]),
+                    "open_alert": alert})
     return out
 
 
 @app.get("/api/astronauts/{aid}")
 def astronaut_detail(aid: str, user: User = Depends(current_user)):
     a = _astronaut(aid, user)
-    return {**a, "evaluation": evaluate_astronaut(aid), "open_alert": db.open_alert(aid)}
+    return {**a, "evaluation": evaluate_astronaut(aid), "open_alert": db.open_alert(aid),
+            "checked_in_today": _checked_in_today(aid), "series": _daily_series(aid)}
 
 
 @app.get("/api/astronauts/{aid}/readings")
