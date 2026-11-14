@@ -1,4 +1,4 @@
-import { Bell, CloudOff, LogOut, Repeat, Satellite, ShieldCheck, Stethoscope, WifiOff } from "lucide-react";
+import { Bell, CloudOff, FlaskConical, LogOut, Repeat, Satellite, ShieldCheck, Stethoscope, WifiOff } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { api, clearApiCache, on } from "./api.js";
 import { Gate, RolePicker } from "./components/Access.jsx";
@@ -10,6 +10,7 @@ const AlertsLog = lazy(() => import("./components/AlertsLog.jsx"));
 const AstronautView = lazy(() => import("./components/AstronautView.jsx"));
 const GroundInbox = lazy(() => import("./screens/GroundInbox.jsx"));
 const Triage = lazy(() => import("./screens/Triage.jsx"));
+const Labs = lazy(() => import("./screens/Labs.jsx"));
 
 // Minimal hash router: #/   #/crew/ID   #/alerts
 function useRoute() {
@@ -62,8 +63,8 @@ export default function App() {
 
 const NAV = {
   astronaut: [],
-  cmo: [["", "Triage", Stethoscope], ["alerts", "Alert history", Bell]],
-  ground: [["", "Comms window", Satellite], ["alerts", "Alert history", Bell]],
+  cmo: [["", "Triage", Stethoscope], ["labs", "Labs", FlaskConical], ["alerts", "Alert history", Bell]],
+  ground: [["", "Comms window", Satellite], ["labs", "Labs", FlaskConical], ["alerts", "Alert history", Bell]],
 };
 
 function Shell({ user, onSwitchRole, onLock }) {
@@ -98,16 +99,18 @@ function Shell({ user, onSwitchRole, onLock }) {
   const llm = config?.llm;
   // Old links (#/astronaut/ID) still work.
   const openId = (page === "crew" || page === "astronaut") ? param : null;
-  const home = page !== "alerts";
+  const home = page !== "alerts" && page !== "labs";
 
   let content;
   if (user.role === "astronaut") {
     content = <AstronautView key={user.astronaut_id} id={user.astronaut_id} user={user} llm={llm} pulse={tick} onChanged={refresh} />;
+  } else if (page === "labs") {
+    content = <Labs />;
   } else if (page === "alerts") {
     content = <AlertsLog user={user} onOpen={(id) => go(`crew/${id}`)} onChanged={refresh} />;
   } else {
     const Screen = user.role === "cmo" ? Triage : GroundInbox;
-    content = <Screen crew={crew} user={user} llm={llm} openId={openId} onChanged={refresh}
+    content = <Screen crew={crew} user={user} llm={llm} openId={openId} onChanged={refresh} pulse={tick}
                       onOpen={(id) => go(`crew/${id}`)} onClose={() => go("")} />;
   }
 

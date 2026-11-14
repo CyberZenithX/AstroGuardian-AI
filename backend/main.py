@@ -193,6 +193,20 @@ def _checked_in_today(aid: str) -> bool:
     return bool(((df["source"] == "checkin") & df["timestamp"].astype(str).str.startswith(today)).any())
 
 
+@app.get("/api/labs")
+def get_labs(user: User = Depends(require("view_all_crew"))):
+    """Real Inspiration4 crew blood tests (NASA OSDR OSD-575 / OSD-569), for the medical roles."""
+    from . import labs
+    return labs.load()
+
+
+@app.get("/api/space-weather")
+def get_space_weather(user: User = Depends(current_user)):
+    """Live solar proton flux (NOAA) and recent SEP events (NASA DONKI), cached."""
+    from . import space_weather
+    return space_weather.snapshot()
+
+
 @app.get("/api/crew")
 def crew(user: User = Depends(current_user)):
     out = []

@@ -16,6 +16,7 @@ _BACKENDS = ["sqlite"] + (["postgres"] if os.getenv("TEST_DATABASE_URL") else []
 def client(request, tmp_path, monkeypatch):
     """Unauthenticated API client on a fresh, seeded database. LLM disabled."""
     monkeypatch.setenv("LLM_PROVIDER", "off")
+    monkeypatch.setenv("SPACE_WEATHER", "off")   # no network in tests; see test_space_weather.py
     monkeypatch.setenv("SECRET_KEY", "test-secret")
     monkeypatch.setenv("DEMO_PASSWORD", "NASA")
     if request.param == "postgres":
@@ -29,6 +30,8 @@ def client(request, tmp_path, monkeypatch):
     from backend import auth, db, main
 
     auth._failures.clear()
+    from backend import space_weather
+    space_weather.reset_memo()
     db.init_db(seed=True, reset=True)
     db.reset_ready_flag()
     with TestClient(main.app) as c:
