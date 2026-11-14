@@ -1,0 +1,5 @@
+timestamp,astronaut_id,heart_rate,spo2,blood_pressure_sys,blood_pressure_dia,temperature,sleep_hours,stress_level
+2026-11-01 08:00:00,ASTRO_01,68,98,120,80,36.7,7.5,Low
+2026-11-02 08:00:00,ASTRO_01,70,98,122,82,36.8,7.0,Low
+2026-11-03 08:00:00,ASTRO_01,72,97,125,84,36.9,6.0,Medium
+2026-11-04 08:00:00,ASTRO_01,85,94,138,90,37.4,4.0,High
