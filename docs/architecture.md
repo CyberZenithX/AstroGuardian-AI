@@ -55,14 +55,13 @@ graph TD
 
 ## API
 
-All routes except `/api/health` and `/api/auth/*` need a session (password gate plus chosen role). See the permissions table in the README.
+All routes except `/api/health` and `/api/auth/*` need a session (a chosen role; there is no password). See the permissions table in the README.
 
 | Method | Path | Purpose |
 |---|---|---|
-| POST | `/api/auth/unlock` | Check the access password |
 | POST | `/api/auth/role` | Choose astronaut (with id), cmo or ground |
-| GET | `/api/auth/state` | Unlocked? Current role and permissions |
-| POST | `/api/auth/switch-role`, `/api/auth/logout` | Back to role picker / lock |
+| GET | `/api/auth/state` | Available roles and astronauts; current role and permissions |
+| POST | `/api/auth/switch-role` | Back to the role picker |
 | GET | `/api/crew` | Per astronaut: status, findings, current values, baseline, 14-day daily series, open alert |
 | GET | `/api/astronauts/{id}` | Full evaluation, open alert, `checked_in_today`, 14-day series |
 | GET | `/api/astronauts/{id}/readings` | Recent readings, oldest first |

@@ -53,10 +53,6 @@ async def prepare_storage(request: Request, call_next):
 
 # ------------------------------------------------------------------ models ---
 
-class UnlockIn(BaseModel):
-    password: str = Field(..., max_length=100)
-
-
 class RoleIn(BaseModel):
     role: Literal["astronaut", "cmo", "ground"]
     astronaut_id: str | None = None
@@ -117,47 +113,30 @@ def health():
 @app.get("/api/auth/state")
 def auth_state(request: Request):
     s = auth.session(request)
-    out = {"unlocked": bool(s.get("gate")), "user": None}
-    if out["unlocked"]:
-        out["roles"] = [{"id": k, "label": v["label"], "description": v["description"]} for k, v in auth.ROLES.items()]
-        out["astronauts"] = [{"id": a["id"], "name": a["name"], "role": a["role"]} for a in db.astronauts()]
-        if s.get("role") in auth.ROLES:
-            out["user"] = auth.User(s["role"], s.get("astronaut_id")).as_dict()
+    out = {
+        "user": None,
+        "roles": [{"id": k, "label": v["label"], "description": v["description"]} for k, v in auth.ROLES.items()],
+        "astronauts": [{"id": a["id"], "name": a["name"], "role": a["role"]} for a in db.astronauts()],
+    }
+    if s.get("role") in auth.ROLES:
+        out["user"] = auth.User(s["role"], s.get("astronaut_id")).as_dict()
     return out
-
-
-@app.post("/api/auth/unlock")
-def unlock(body: UnlockIn, request: Request, response: Response):
-    client = request.client.host if request.client else "unknown"
-    if not auth.check_password(body.password, client):
-        raise HTTPException(401, "Incorrect password.")
-    auth.set_cookie(response, request, {"gate": True})
-    return {"unlocked": True}
 
 
 @app.post("/api/auth/role")
 def choose_role(body: RoleIn, request: Request, response: Response):
-    if not auth.session(request).get("gate"):
-        raise HTTPException(401, "Locked. Enter the access password.")
     aid = None
     if body.role == "astronaut":
         if not body.astronaut_id or not db.astronaut(body.astronaut_id):
             raise HTTPException(422, "Choose which astronaut you are.")
         aid = body.astronaut_id
-    auth.set_cookie(response, request, {"gate": True, "role": body.role, "astronaut_id": aid})
+    auth.set_cookie(response, request, {"role": body.role, "astronaut_id": aid})
     return auth.User(body.role, aid).as_dict()
 
 
 @app.post("/api/auth/switch-role")
-def switch_role(request: Request, response: Response):
-    """Back to the role picker without re-entering the password."""
-    if auth.session(request).get("gate"):
-        auth.set_cookie(response, request, {"gate": True})
-    return {"ok": True}
-
-
-@app.post("/api/auth/logout")
-def logout(response: Response):
+def switch_role(response: Response):
+    """Back to the role picker."""
     auth.clear_cookie(response)
     return {"ok": True}
 
